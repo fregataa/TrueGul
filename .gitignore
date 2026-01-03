@@ -1,3 +1,6 @@
+# Agent
+.serena/
+
 # Dependencies
 node_modules/
 vendor/

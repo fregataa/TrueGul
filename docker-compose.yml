@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: truegul-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-truegul}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-truegul_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-truegul}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-truegul}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - truegul-network
+
+  api-server:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+    container_name: truegul-api
+    environment:
+      - PORT=8080
+      - DATABASE_URL=postgres://${POSTGRES_USER:-truegul}:${POSTGRES_PASSWORD:-truegul_secret}@postgres:5432/${POSTGRES_DB:-truegul}?sslmode=disable
+      - ML_SERVER_URL=http://ml-server:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - truegul-network
+
+  ml-server:
+    build:
+      context: ./ml-server
+      dockerfile: Dockerfile
+    container_name: truegul-ml
+    environment:
+      - PORT=8000
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    ports:
+      - "8000:8000"
+    networks:
+      - truegul-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: truegul-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@truegul.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - truegul-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+
+networks:
+  truegul-network:
+    driver: bridge
