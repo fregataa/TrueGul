@@ -22,8 +22,13 @@ func main() {
 	}
 
 	userRepo := repository.NewUserRepository(db)
+	writingRepo := repository.NewWritingRepository(db)
+
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiry)
+	writingService := service.NewWritingService(writingRepo)
+
 	authHandler := handler.NewAuthHandler(authService, cfg.Environment)
+	writingHandler := handler.NewWritingHandler(writingService)
 
 	r := gin.Default()
 
@@ -53,6 +58,15 @@ func main() {
 		protected.Use(middleware.CSRFMiddleware())
 		{
 			protected.GET("/auth/me", authHandler.Me)
+
+			writings := protected.Group("/writings")
+			{
+				writings.POST("", writingHandler.Create)
+				writings.GET("", writingHandler.List)
+				writings.GET("/:id", writingHandler.GetByID)
+				writings.PUT("/:id", writingHandler.Update)
+				writings.DELETE("/:id", writingHandler.Delete)
+			}
 		}
 	}
 
