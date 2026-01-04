@@ -21,6 +21,7 @@ dist/
 *.dylib
 *.egg-info/
 *.egg
+api-server/server
 
 # Environment variables
 .env
