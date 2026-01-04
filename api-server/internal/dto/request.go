@@ -26,3 +26,23 @@ type ListWritingsQuery struct {
 	Page  int `form:"page,default=1" binding:"min=1"`
 	Limit int `form:"limit,default=10" binding:"min=1,max=100"`
 }
+
+type AnalysisCallbackResult struct {
+	AIProbability float64 `json:"ai_probability"`
+	Feedback      string  `json:"feedback"`
+	LatencyMs     int     `json:"latency_ms"`
+}
+
+type AnalysisCallbackError struct {
+	Code      string `json:"code"`
+	Message   string `json:"message"`
+	Retryable bool   `json:"retryable"`
+}
+
+type AnalysisCallbackRequest struct {
+	Version string                  `json:"version" binding:"required"`
+	TaskID  string                  `json:"task_id" binding:"required,uuid"`
+	Status  string                  `json:"status" binding:"required,oneof=completed failed"`
+	Result  *AnalysisCallbackResult `json:"result"`
+	Error   *AnalysisCallbackError  `json:"error"`
+}

@@ -44,3 +44,21 @@ type WritingListResponse struct {
 	Limit      int               `json:"limit"`
 	TotalPages int               `json:"total_pages"`
 }
+
+type SubmitResponse struct {
+	Message    string    `json:"message"`
+	AnalysisID uuid.UUID `json:"analysis_id"`
+}
+
+type AnalysisResponse struct {
+	ID           uuid.UUID `json:"id"`
+	WritingID    uuid.UUID `json:"writing_id"`
+	Status       string    `json:"status"`
+	AIScore      *float64  `json:"ai_score,omitempty"`
+	Feedback     *string   `json:"feedback,omitempty"`
+	ErrorCode    *string   `json:"error_code,omitempty"`
+	ErrorMessage *string   `json:"error_message,omitempty"`
+	LatencyMs    *int      `json:"latency_ms,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}

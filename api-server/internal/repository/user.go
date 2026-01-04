@@ -62,6 +62,15 @@ func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
 	return count > 0, nil
 }
 
+func (r *UserRepository) Update(user *data.User) error {
+	m := toModel(user)
+	if err := r.db.Save(m).Error; err != nil {
+		return apperrors.InternalServerWrap(err, "Failed to update user")
+	}
+	user.UpdatedAt = m.UpdatedAt
+	return nil
+}
+
 func toModel(d *data.User) *model.User {
 	return &model.User{
 		ID:               d.ID,

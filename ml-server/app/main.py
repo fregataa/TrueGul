@@ -1,16 +1,43 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes import analyze
+from app.services.detector import detector_service
+from app.services.feedback import feedback_service
+from app.services.callback import callback_client
+from app.services.consumer import create_task_processor
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    detector_service.load_model()
+    feedback_service.init_client()
+
+    task_processor = create_task_processor()
+    await task_processor.connect()
+
+    consumer_task = asyncio.create_task(task_processor.start())
+
     yield
-    # Shutdown
+
+    await task_processor.stop()
+    consumer_task.cancel()
+    try:
+        await consumer_task
+    except asyncio.CancelledError:
+        pass
+    await task_processor.disconnect()
+    await callback_client.close()
 
 
 app = FastAPI(

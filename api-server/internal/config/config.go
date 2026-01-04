@@ -8,12 +8,17 @@ import (
 )
 
 type Config struct {
-	Port        string
-	DatabaseURL string
-	JWTSecret   string
-	JWTExpiry   time.Duration
-	MLServerURL string
-	Environment string
+	Port             string
+	DatabaseURL      string
+	RedisURL         string
+	JWTSecret        string
+	JWTExpiry        time.Duration
+	MLServerURL      string
+	MLCallbackSecret string
+	Environment      string
+	StreamName       string
+	CallbackBaseURL  string
+	CallbackPath     string
 }
 
 func Load() *Config {
@@ -29,13 +34,21 @@ func Load() *Config {
 		log.Fatal("JWT_SECRET environment variable is required")
 	}
 
+	port := getEnv("PORT", "8080")
+	callbackBaseURL := getEnv("CALLBACK_BASE_URL", "http://localhost:"+port)
+
 	return &Config{
-		Port:        getEnv("PORT", "8080"),
-		DatabaseURL: databaseURL,
-		JWTSecret:   jwtSecret,
-		JWTExpiry:   time.Duration(jwtExpiryHours) * time.Hour,
-		MLServerURL: getEnv("ML_SERVER_URL", "http://localhost:8000"),
-		Environment: getEnv("ENVIRONMENT", "development"),
+		Port:             port,
+		DatabaseURL:      databaseURL,
+		RedisURL:         getEnv("REDIS_URL", "redis://localhost:6379"),
+		JWTSecret:        jwtSecret,
+		JWTExpiry:        time.Duration(jwtExpiryHours) * time.Hour,
+		MLServerURL:      getEnv("ML_SERVER_URL", "http://localhost:8000"),
+		MLCallbackSecret: getEnv("ML_CALLBACK_SECRET", ""),
+		Environment:      getEnv("ENVIRONMENT", "development"),
+		StreamName:       getEnv("STREAM_NAME", "analysis_tasks"),
+		CallbackBaseURL:  callbackBaseURL,
+		CallbackPath:     "/api/v1/internal/callback",
 	}
 }
 
