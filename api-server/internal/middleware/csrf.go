@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/truegul/api-server/internal/dto"
+	apperrors "github.com/truegul/api-server/internal/errors"
 )
 
 func CSRFMiddleware() gin.HandlerFunc {
@@ -19,7 +20,7 @@ func CSRFMiddleware() gin.HandlerFunc {
 		csrfCookie, err := c.Cookie("csrf_token")
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusForbidden, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeUnauthorized,
+				ErrorCode: apperrors.CodeForbidden,
 				Message:   "CSRF token missing",
 			})
 			return
@@ -28,7 +29,7 @@ func CSRFMiddleware() gin.HandlerFunc {
 		csrfHeader := c.GetHeader("X-CSRF-Token")
 		if csrfHeader == "" {
 			c.AbortWithStatusJSON(http.StatusForbidden, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeUnauthorized,
+				ErrorCode: apperrors.CodeForbidden,
 				Message:   "CSRF token header missing",
 			})
 			return
@@ -36,7 +37,7 @@ func CSRFMiddleware() gin.HandlerFunc {
 
 		if csrfCookie != csrfHeader {
 			c.AbortWithStatusJSON(http.StatusForbidden, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeUnauthorized,
+				ErrorCode: apperrors.CodeForbidden,
 				Message:   "CSRF token mismatch",
 			})
 			return

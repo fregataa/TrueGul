@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/truegul/api-server/internal/dto"
+	apperrors "github.com/truegul/api-server/internal/errors"
 	"github.com/truegul/api-server/internal/service"
 )
 
@@ -13,7 +14,7 @@ func AuthMiddleware(authService *service.AuthService) gin.HandlerFunc {
 		tokenCookie, err := c.Cookie("token")
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeUnauthorized,
+				ErrorCode: apperrors.CodeUnauthorized,
 				Message:   "Authentication required",
 			})
 			return
@@ -21,8 +22,15 @@ func AuthMiddleware(authService *service.AuthService) gin.HandlerFunc {
 
 		claims, err := authService.ValidateToken(tokenCookie)
 		if err != nil {
+			if appErr, ok := apperrors.IsAppError(err); ok {
+				c.AbortWithStatusJSON(appErr.HTTPStatus, dto.ErrorResponse{
+					ErrorCode: appErr.Code,
+					Message:   appErr.Message,
+				})
+				return
+			}
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeUnauthorized,
+				ErrorCode: apperrors.CodeUnauthorized,
 				Message:   "Invalid or expired token",
 			})
 			return

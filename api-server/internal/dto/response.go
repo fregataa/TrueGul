@@ -44,14 +44,3 @@ type WritingListResponse struct {
 	Limit      int               `json:"limit"`
 	TotalPages int               `json:"total_pages"`
 }
-
-// Error codes
-const (
-	ErrCodeValidation     = "VALIDATION_ERROR"
-	ErrCodeUnauthorized   = "UNAUTHORIZED"
-	ErrCodeForbidden      = "FORBIDDEN"
-	ErrCodeUserExists     = "USER_EXISTS"
-	ErrCodeInternalServer = "INTERNAL_SERVER_ERROR"
-	ErrCodeNotFound       = "NOT_FOUND"
-	ErrCodeContentTooLong = "CONTENT_TOO_LONG"
-)

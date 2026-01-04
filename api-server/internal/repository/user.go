@@ -1,8 +1,11 @@
 package repository
 
 import (
+	"errors"
+
 	"github.com/google/uuid"
 	"github.com/truegul/api-server/internal/data"
+	apperrors "github.com/truegul/api-server/internal/errors"
 	"github.com/truegul/api-server/internal/model"
 	"gorm.io/gorm"
 )
@@ -18,7 +21,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 func (r *UserRepository) Create(user *data.User) error {
 	m := toModel(user)
 	if err := r.db.Create(m).Error; err != nil {
-		return err
+		return apperrors.InternalServerWrap(err, "Failed to create user")
 	}
 	user.ID = m.ID
 	user.CreatedAt = m.CreatedAt
@@ -30,7 +33,10 @@ func (r *UserRepository) FindByEmail(email string) (*data.User, error) {
 	var m model.User
 	err := r.db.Where("email = ?", email).First(&m).Error
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperrors.NotFound("User not found")
+		}
+		return nil, apperrors.InternalServerWrap(err, "Failed to find user")
 	}
 	return toData(&m), nil
 }
@@ -39,7 +45,10 @@ func (r *UserRepository) FindByID(id uuid.UUID) (*data.User, error) {
 	var m model.User
 	err := r.db.Where("id = ?", id).First(&m).Error
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperrors.NotFound("User not found")
+		}
+		return nil, apperrors.InternalServerWrap(err, "Failed to find user")
 	}
 	return toData(&m), nil
 }
@@ -48,7 +57,7 @@ func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
 	var count int64
 	err := r.db.Model(&model.User{}).Where("email = ?", email).Count(&count).Error
 	if err != nil {
-		return false, err
+		return false, apperrors.InternalServerWrap(err, "Failed to check user existence")
 	}
 	return count > 0, nil
 }

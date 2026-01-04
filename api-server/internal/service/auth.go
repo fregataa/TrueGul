@@ -3,20 +3,14 @@ package service
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/truegul/api-server/internal/data"
+	apperrors "github.com/truegul/api-server/internal/errors"
 	"github.com/truegul/api-server/internal/repository"
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserExists         = errors.New("user already exists")
-	ErrInvalidToken       = errors.New("invalid token")
 )
 
 type AuthService struct {
@@ -45,12 +39,12 @@ func (s *AuthService) Signup(email, password string) (*data.User, error) {
 		return nil, err
 	}
 	if exists {
-		return nil, ErrUserExists
+		return nil, apperrors.Conflict("User with this email already exists")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return nil, apperrors.InternalServerWrap(err, "Failed to hash password")
 	}
 
 	user := &data.User{
@@ -68,16 +62,16 @@ func (s *AuthService) Signup(email, password string) (*data.User, error) {
 func (s *AuthService) Login(email, password string) (*data.User, string, error) {
 	user, err := s.userRepo.FindByEmail(email)
 	if err != nil {
-		return nil, "", ErrInvalidCredentials
+		return nil, "", apperrors.Unauthorized("Invalid email or password")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-		return nil, "", ErrInvalidCredentials
+		return nil, "", apperrors.Unauthorized("Invalid email or password")
 	}
 
 	token, err := s.GenerateToken(user)
 	if err != nil {
-		return nil, "", err
+		return nil, "", apperrors.InternalServerWrap(err, "Failed to generate token")
 	}
 
 	return user, token, nil
@@ -95,26 +89,30 @@ func (s *AuthService) GenerateToken(user *data.User) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(s.jwtSecret)
+	tokenString, err := token.SignedString(s.jwtSecret)
+	if err != nil {
+		return "", apperrors.InternalServerWrap(err, "Failed to sign token")
+	}
+	return tokenString, nil
 }
 
 func (s *AuthService) ValidateToken(tokenString string) (*JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrInvalidToken
+			return nil, apperrors.Unauthorized("Invalid token signing method")
 		}
 		return s.jwtSecret, nil
 	})
 
 	if err != nil {
-		return nil, ErrInvalidToken
+		return nil, apperrors.Unauthorized("Invalid or expired token")
 	}
 
 	if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
 		return claims, nil
 	}
 
-	return nil, ErrInvalidToken
+	return nil, apperrors.Unauthorized("Invalid token")
 }
 
 func (s *AuthService) GetUserByID(id uuid.UUID) (*data.User, error) {
@@ -124,7 +122,7 @@ func (s *AuthService) GetUserByID(id uuid.UUID) (*data.User, error) {
 func GenerateCSRFToken() (string, error) {
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
-		return "", err
+		return "", apperrors.InternalServerWrap(err, "Failed to generate CSRF token")
 	}
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }

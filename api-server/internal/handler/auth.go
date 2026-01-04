@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/truegul/api-server/internal/dto"
+	apperrors "github.com/truegul/api-server/internal/errors"
 	"github.com/truegul/api-server/internal/service"
 )
 
@@ -25,26 +25,13 @@ func NewAuthHandler(authService *service.AuthService, environment string) *AuthH
 func (h *AuthHandler) Signup(c *gin.Context) {
 	var req dto.SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeValidation,
-			Message:   err.Error(),
-		})
+		handleValidationError(c, err.Error())
 		return
 	}
 
 	user, err := h.authService.Signup(req.Email, req.Password)
 	if err != nil {
-		if errors.Is(err, service.ErrUserExists) {
-			c.JSON(http.StatusConflict, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeUserExists,
-				Message:   "User with this email already exists",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeInternalServer,
-			Message:   "Failed to create user",
-		})
+		handleError(c, err)
 		return
 	}
 
@@ -57,35 +44,19 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeValidation,
-			Message:   err.Error(),
-		})
+		handleValidationError(c, err.Error())
 		return
 	}
 
 	user, token, err := h.authService.Login(req.Email, req.Password)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidCredentials) {
-			c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeUnauthorized,
-				Message:   "Invalid email or password",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeInternalServer,
-			Message:   "Failed to login",
-		})
+		handleError(c, err)
 		return
 	}
 
 	csrfToken, err := service.GenerateCSRFToken()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeInternalServer,
-			Message:   "Failed to generate CSRF token",
-		})
+		handleError(c, err)
 		return
 	}
 
@@ -130,10 +101,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeUnauthorized,
-			Message:   "Not authenticated",
-		})
+		handleError(c, apperrors.Unauthorized("Not authenticated"))
 		return
 	}
 

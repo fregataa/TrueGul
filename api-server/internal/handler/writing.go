@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,10 +21,7 @@ func NewWritingHandler(writingService *service.WritingService) *WritingHandler {
 func (h *WritingHandler) Create(c *gin.Context) {
 	var req dto.CreateWritingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeValidation,
-			Message:   err.Error(),
-		})
+		handleValidationError(c, err.Error())
 		return
 	}
 
@@ -33,17 +29,7 @@ func (h *WritingHandler) Create(c *gin.Context) {
 
 	writing, err := h.writingService.Create(userID, req.Type, req.Title, req.Content)
 	if err != nil {
-		if errors.Is(err, service.ErrContentTooLong) {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeContentTooLong,
-				Message:   "Content exceeds maximum length of 2000 characters",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeInternalServer,
-			Message:   "Failed to create writing",
-		})
+		handleError(c, err)
 		return
 	}
 
@@ -54,10 +40,7 @@ func (h *WritingHandler) GetByID(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeValidation,
-			Message:   "Invalid writing ID",
-		})
+		handleValidationError(c, "Invalid writing ID")
 		return
 	}
 
@@ -65,24 +48,7 @@ func (h *WritingHandler) GetByID(c *gin.Context) {
 
 	writing, err := h.writingService.GetByID(id, userID)
 	if err != nil {
-		if errors.Is(err, service.ErrWritingNotFound) {
-			c.JSON(http.StatusNotFound, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeNotFound,
-				Message:   "Writing not found",
-			})
-			return
-		}
-		if errors.Is(err, service.ErrForbidden) {
-			c.JSON(http.StatusForbidden, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeForbidden,
-				Message:   "Access denied",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeInternalServer,
-			Message:   "Failed to get writing",
-		})
+		handleError(c, err)
 		return
 	}
 
@@ -92,10 +58,7 @@ func (h *WritingHandler) GetByID(c *gin.Context) {
 func (h *WritingHandler) List(c *gin.Context) {
 	var query dto.ListWritingsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeValidation,
-			Message:   err.Error(),
-		})
+		handleValidationError(c, err.Error())
 		return
 	}
 
@@ -103,10 +66,7 @@ func (h *WritingHandler) List(c *gin.Context) {
 
 	writings, total, err := h.writingService.List(userID, query.Page, query.Limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeInternalServer,
-			Message:   "Failed to list writings",
-		})
+		handleError(c, err)
 		return
 	}
 
@@ -133,19 +93,13 @@ func (h *WritingHandler) Update(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeValidation,
-			Message:   "Invalid writing ID",
-		})
+		handleValidationError(c, "Invalid writing ID")
 		return
 	}
 
 	var req dto.UpdateWritingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeValidation,
-			Message:   err.Error(),
-		})
+		handleValidationError(c, err.Error())
 		return
 	}
 
@@ -164,31 +118,7 @@ func (h *WritingHandler) Update(c *gin.Context) {
 
 	writing, err := h.writingService.Update(id, userID, writingType, title, content)
 	if err != nil {
-		if errors.Is(err, service.ErrWritingNotFound) {
-			c.JSON(http.StatusNotFound, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeNotFound,
-				Message:   "Writing not found",
-			})
-			return
-		}
-		if errors.Is(err, service.ErrForbidden) {
-			c.JSON(http.StatusForbidden, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeForbidden,
-				Message:   "Access denied",
-			})
-			return
-		}
-		if errors.Is(err, service.ErrContentTooLong) {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeContentTooLong,
-				Message:   "Content exceeds maximum length of 2000 characters",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeInternalServer,
-			Message:   "Failed to update writing",
-		})
+		handleError(c, err)
 		return
 	}
 
@@ -199,10 +129,7 @@ func (h *WritingHandler) Delete(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeValidation,
-			Message:   "Invalid writing ID",
-		})
+		handleValidationError(c, "Invalid writing ID")
 		return
 	}
 
@@ -210,24 +137,7 @@ func (h *WritingHandler) Delete(c *gin.Context) {
 
 	err = h.writingService.Delete(id, userID)
 	if err != nil {
-		if errors.Is(err, service.ErrWritingNotFound) {
-			c.JSON(http.StatusNotFound, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeNotFound,
-				Message:   "Writing not found",
-			})
-			return
-		}
-		if errors.Is(err, service.ErrForbidden) {
-			c.JSON(http.StatusForbidden, dto.ErrorResponse{
-				ErrorCode: dto.ErrCodeForbidden,
-				Message:   "Access denied",
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			ErrorCode: dto.ErrCodeInternalServer,
-			Message:   "Failed to delete writing",
-		})
+		handleError(c, err)
 		return
 	}
 

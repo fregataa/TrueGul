@@ -1,18 +1,10 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/google/uuid"
 	"github.com/truegul/api-server/internal/data"
+	apperrors "github.com/truegul/api-server/internal/errors"
 	"github.com/truegul/api-server/internal/repository"
-	"gorm.io/gorm"
-)
-
-var (
-	ErrWritingNotFound = errors.New("writing not found")
-	ErrForbidden       = errors.New("forbidden")
-	ErrContentTooLong  = errors.New("content too long")
 )
 
 const MaxContentLength = 2000
@@ -27,7 +19,7 @@ func NewWritingService(writingRepo *repository.WritingRepository) *WritingServic
 
 func (s *WritingService) Create(userID uuid.UUID, writingType, title, content string) (*data.Writing, error) {
 	if len([]rune(content)) > MaxContentLength {
-		return nil, ErrContentTooLong
+		return nil, apperrors.ContentTooLong("Content exceeds maximum length of 2000 characters")
 	}
 
 	writing := &data.Writing{
@@ -48,14 +40,11 @@ func (s *WritingService) Create(userID uuid.UUID, writingType, title, content st
 func (s *WritingService) GetByID(id, userID uuid.UUID) (*data.Writing, error) {
 	writing, err := s.writingRepo.FindByID(id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrWritingNotFound
-		}
 		return nil, err
 	}
 
 	if writing.UserID != userID {
-		return nil, ErrForbidden
+		return nil, apperrors.Forbidden("Access denied")
 	}
 
 	return writing, nil
@@ -69,14 +58,11 @@ func (s *WritingService) List(userID uuid.UUID, page, limit int) ([]*data.Writin
 func (s *WritingService) Update(id, userID uuid.UUID, writingType, title, content *string) (*data.Writing, error) {
 	writing, err := s.writingRepo.FindByID(id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrWritingNotFound
-		}
 		return nil, err
 	}
 
 	if writing.UserID != userID {
-		return nil, ErrForbidden
+		return nil, apperrors.Forbidden("Access denied")
 	}
 
 	if writingType != nil {
@@ -87,7 +73,7 @@ func (s *WritingService) Update(id, userID uuid.UUID, writingType, title, conten
 	}
 	if content != nil {
 		if len([]rune(*content)) > MaxContentLength {
-			return nil, ErrContentTooLong
+			return nil, apperrors.ContentTooLong("Content exceeds maximum length of 2000 characters")
 		}
 		writing.Content = *content
 	}
@@ -102,14 +88,11 @@ func (s *WritingService) Update(id, userID uuid.UUID, writingType, title, conten
 func (s *WritingService) Delete(id, userID uuid.UUID) error {
 	writing, err := s.writingRepo.FindByID(id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrWritingNotFound
-		}
 		return err
 	}
 
 	if writing.UserID != userID {
-		return ErrForbidden
+		return apperrors.Forbidden("Access denied")
 	}
 
 	return s.writingRepo.Delete(id)
