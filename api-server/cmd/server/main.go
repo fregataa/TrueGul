@@ -3,27 +3,36 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/truegul/api-server/internal/config"
+	"github.com/truegul/api-server/internal/database"
+	"github.com/truegul/api-server/internal/handler"
+	"github.com/truegul/api-server/internal/middleware"
+	"github.com/truegul/api-server/internal/repository"
+	"github.com/truegul/api-server/internal/service"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	cfg := config.Load()
+
+	db, err := database.Connect(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
+
+	userRepo := repository.NewUserRepository(db)
+	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiry)
+	authHandler := handler.NewAuthHandler(authService, cfg.Environment)
 
 	r := gin.Default()
 
-	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "healthy",
 		})
 	})
 
-	// API v1 routes
 	v1 := r.Group("/api/v1")
 	{
 		v1.GET("/ping", func(c *gin.Context) {
@@ -31,10 +40,24 @@ func main() {
 				"message": "pong",
 			})
 		})
+
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/signup", authHandler.Signup)
+			auth.POST("/login", authHandler.Login)
+			auth.POST("/logout", authHandler.Logout)
+		}
+
+		protected := v1.Group("")
+		protected.Use(middleware.AuthMiddleware(authService))
+		protected.Use(middleware.CSRFMiddleware())
+		{
+			protected.GET("/auth/me", authHandler.Me)
+		}
 	}
 
-	log.Printf("Server starting on port %s", port)
-	if err := r.Run(":" + port); err != nil {
+	log.Printf("Server starting on port %s", cfg.Port)
+	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
