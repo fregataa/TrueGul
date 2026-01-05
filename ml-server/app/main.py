@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import analyze
 from app.services.detector import detector_service
 from app.services.feedback import feedback_service
 from app.services.callback import callback_client
@@ -54,9 +53,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.include_router(analyze.router, prefix="/api/v1", tags=["analyze"])
-
 
 @app.get("/health")
 async def health_check():
