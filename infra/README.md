@@ -107,17 +107,17 @@ terraform apply
 # JWT Secret
 aws secretsmanager create-secret \
   --name truegul/production/jwt \
-  --secret-string "your-jwt-secret-min-32-characters"
+  --secret-string "<REPLACE_WITH_JWT_SECRET>"
 
 # Callback Secret
 aws secretsmanager create-secret \
   --name truegul/production/callback \
-  --secret-string "your-callback-secret"
+  --secret-string "<REPLACE_WITH_CALLBACK_SECRET>"
 
 # OpenAI API Key
 aws secretsmanager create-secret \
   --name truegul/production/openai \
-  --secret-string "sk-your-openai-api-key"
+  --secret-string "<REPLACE_WITH_OPENAI_API_KEY>"
 ```
 
 ### 3. Build and Push Docker Images

@@ -1,7 +1,7 @@
 # Copy this file to terraform.tfvars and fill in the values
 
 # Database password (required)
-database_password = "your-secure-password-here"
+database_password = "<REPLACE_WITH_YOUR_PASSWORD>"
 
 # Optional overrides
 # rds_instance_class       = "db.t3.small"
