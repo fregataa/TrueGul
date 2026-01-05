@@ -1,8 +1,10 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Writing } from "@/lib/api/writings";
 import { useAuthStore } from "@/stores/auth";
@@ -68,16 +70,16 @@ export default function DashboardPage() {
     return type === "essay" ? "에세이" : "자소서";
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
       case "draft":
-        return "임시저장";
+        return { label: "임시저장", variant: "warning" as const };
       case "submitted":
-        return "제출됨";
+        return { label: "분석 중", variant: "secondary" as const, showLoader: true };
       case "analyzed":
-        return "분석완료";
+        return { label: "분석완료", variant: "success" as const };
       default:
-        return status;
+        return { label: status, variant: "outline" as const };
     }
   };
 
@@ -166,28 +168,28 @@ export default function DashboardPage() {
                         {getTypeLabel(writing.type)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            writing.status === "draft"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : writing.status === "submitted"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {getStatusLabel(writing.status)}
-                        </span>
+                        {(() => {
+                          const config = getStatusConfig(writing.status);
+                          return (
+                            <Badge variant={config.variant} className="gap-1">
+                              {config.showLoader && <Loader2 className="h-3 w-3 animate-spin" />}
+                              {config.label}
+                            </Badge>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(writing.updated_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end gap-2">
-                          <Link href={`/writings/${writing.id}/edit`}>
-                            <Button variant="outline" size="sm">
-                              수정
-                            </Button>
-                          </Link>
+                          {writing.status === "draft" && (
+                            <Link href={`/writings/${writing.id}/edit`}>
+                              <Button variant="outline" size="sm">
+                                수정
+                              </Button>
+                            </Link>
+                          )}
                           {deleteConfirm === writing.id ? (
                             <div className="flex gap-1">
                               <Button
