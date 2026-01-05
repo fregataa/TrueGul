@@ -19,6 +19,9 @@ class AIDetectorService:
         )
         logger.info("Model loaded successfully")
 
+    def is_loaded(self) -> bool:
+        return self._pipeline is not None
+
     def detect(self, text: str) -> float:
         if self._pipeline is None:
             raise RuntimeError("Model not loaded. Call load_model() first.")
@@ -30,6 +33,3 @@ class AIDetectorService:
         if label.lower() in ("chatgpt", "ai", "fake", "machine"):
             return score * 100
         return (1 - score) * 100
-
-
-detector_service = AIDetectorService()

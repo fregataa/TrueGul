@@ -10,16 +10,25 @@ from app.schemas.task import (
     AnalysisError,
     ErrorCode,
 )
-from app.services.detector import detector_service
-from app.services.feedback import feedback_service
-from app.services.callback import callback_client
+from app.services.detector import AIDetectorService
+from app.services.feedback import FeedbackService
+from app.services.callback import CallbackClient
 
 logger = logging.getLogger(__name__)
 
 
 class TaskProcessor:
-    def __init__(self, consumer: Consumer):
+    def __init__(
+        self,
+        consumer: Consumer,
+        detector: AIDetectorService,
+        feedback: FeedbackService,
+        callback: CallbackClient,
+    ) -> None:
         self._consumer = consumer
+        self._detector = detector
+        self._feedback = feedback
+        self._callback = callback
 
     async def connect(self) -> None:
         await self._consumer.connect()
@@ -47,9 +56,9 @@ class TaskProcessor:
 
             start_time = time.time()
 
-            ai_score = detector_service.detect(task.content)
+            ai_score = self._detector.detect(task.content)
 
-            feedback = feedback_service.generate_feedback(task.content, task.writing_type, ai_score)
+            feedback = self._feedback.generate_feedback(task.content, task.writing_type, ai_score)
 
             latency_ms = int((time.time() - start_time) * 1000)
 
@@ -86,15 +95,19 @@ class TaskProcessor:
             )
 
         if task:
-            await callback_client.send_callback(task.callback_url, callback)
+            await self._callback.send_callback(task.callback_url, callback)
         await self._consumer.ack(message.id)
 
 
-def create_task_processor() -> TaskProcessor:
+def create_task_processor(
+    detector: AIDetectorService,
+    feedback: FeedbackService,
+    callback: CallbackClient,
+) -> TaskProcessor:
     consumer = RedisConsumer(
         redis_url=settings.redis_url,
         stream_name=settings.stream_name,
         consumer_group=settings.consumer_group,
         consumer_name=settings.consumer_name,
     )
-    return TaskProcessor(consumer)
+    return TaskProcessor(consumer, detector, feedback, callback)

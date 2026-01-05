@@ -47,3 +47,7 @@ func (p *RedisPublisher) Publish(ctx context.Context, task AnalysisTask) error {
 func (p *RedisPublisher) Close() error {
 	return p.client.Close()
 }
+
+func (p *RedisPublisher) Client() *redis.Client {
+	return p.client
+}

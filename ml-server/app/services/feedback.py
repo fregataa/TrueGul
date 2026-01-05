@@ -51,6 +51,9 @@ class FeedbackService:
         else:
             logger.warning("OpenAI API key not set, feedback will be unavailable")
 
+    def is_initialized(self) -> bool:
+        return self._client is not None
+
     def generate_feedback(self, text: str, writing_type: WritingType, ai_score: float) -> str:
         if self._client is None:
             return "피드백 서비스를 사용할 수 없습니다. (OpenAI API 키 미설정)"
@@ -66,6 +69,3 @@ class FeedbackService:
         )
 
         return response.choices[0].message.content or "피드백을 생성할 수 없습니다."
-
-
-feedback_service = FeedbackService()

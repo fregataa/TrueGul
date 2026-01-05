@@ -39,14 +39,13 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService, cfg.Environment)
 	writingHandler := handler.NewWritingHandler(writingService)
 	analysisHandler := handler.NewAnalysisHandler(analysisService, cfg)
+	healthHandler := handler.NewHealthHandler(db, publisher.Client())
 
 	r := gin.Default()
 
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "healthy",
-		})
-	})
+	r.GET("/health", healthHandler.Check)
+	r.GET("/health/live", healthHandler.Liveness)
+	r.GET("/health/ready", healthHandler.Readiness)
 
 	v1 := r.Group("/api/v1")
 	{
