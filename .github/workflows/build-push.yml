@@ -62,6 +62,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.api-server == 'true' || github.event.inputs.service == 'api-server' || github.event.inputs.service == 'all'
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       id-token: write
       contents: read
@@ -97,6 +98,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.ml-server == 'true' || github.event.inputs.service == 'ml-server' || github.event.inputs.service == 'all'
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       id-token: write
       contents: read
