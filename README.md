@@ -23,21 +23,6 @@ TrueGul allows users to write content independently, detects whether the text wa
 | Database | PostgreSQL (AWS RDS) |
 | Infrastructure | AWS (ECS/Fargate, ECR, RDS) |
 
-## Architecture
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Web UI    │────▶│  API Server │────▶│  Database   │
-│  (Next.js)  │     │ (Go/Fargate)│     │ (RDS)       │
-└─────────────┘     └──────┬──────┘     └─────────────┘
-                           │
-                           ▼ (Async/Polling)
-                    ┌─────────────┐     ┌─────────────┐
-                    │  ML Server  │────▶│ OpenAI API  │
-                    │  (Fargate)  │     │ (Feedback)  │
-                    └─────────────┘     └─────────────┘
-```
-
 ## Project Structure
 
 ```
