@@ -106,7 +106,6 @@ docker compose -f docker-compose.dev.yml down -v
 ### Full Stack (with ML Server)
 
 ```bash
-# Requires .env file with OPENAI_API_KEY
 docker compose up -d --build
 ```
 

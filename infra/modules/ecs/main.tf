@@ -291,10 +291,6 @@ resource "aws_ecs_task_definition" "ml_server" {
 
       secrets = [
         {
-          name      = "OPENAI_API_KEY"
-          valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:${var.project}/${var.environment}/openai"
-        },
-        {
           name      = "ML_CALLBACK_SECRET"
           valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:${var.project}/${var.environment}/callback"
         }

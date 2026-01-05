@@ -67,20 +67,12 @@ async def health_check(request: Request):
     overall_status = "healthy"
 
     detector = getattr(request.app.state, "detector", None)
-    feedback = getattr(request.app.state, "feedback", None)
 
     # Check model status
     if detector is not None and detector.is_loaded():
         services["model"] = "healthy"
     else:
         services["model"] = "not loaded"
-        overall_status = "unhealthy"
-
-    # Check OpenAI client status
-    if feedback is not None and feedback.is_initialized():
-        services["openai"] = "healthy"
-    else:
-        services["openai"] = "not initialized"
         overall_status = "unhealthy"
 
     return {

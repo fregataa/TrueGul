@@ -6,7 +6,6 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     api_server_url: str = "http://localhost:8080"
     ml_callback_secret: str = ""
-    openai_api_key: str = ""
     model_name: str = "Hello-SimpleAI/chatgpt-detector-roberta"
     model_version: str = "0.1.0"
     stream_name: str = "analysis_tasks"

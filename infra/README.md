@@ -113,11 +113,6 @@ aws secretsmanager create-secret \
 aws secretsmanager create-secret \
   --name truegul/production/callback \
   --secret-string "<REPLACE_WITH_CALLBACK_SECRET>"
-
-# OpenAI API Key
-aws secretsmanager create-secret \
-  --name truegul/production/openai \
-  --secret-string "<REPLACE_WITH_OPENAI_API_KEY>"
 ```
 
 ### 3. Build and Push Docker Images
