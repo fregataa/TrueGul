@@ -1,0 +1,122 @@
+name: Deploy to ECS
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy'
+        required: true
+        type: choice
+        options:
+          - all
+          - api-server
+          - ml-server
+      image_tag:
+        description: 'Image tag to deploy (default: latest)'
+        required: false
+        default: 'latest'
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY_API: truegul-api-server
+  ECR_REPOSITORY_ML: truegul-ml-server
+  ENVIRONMENT: production
+
+jobs:
+  deploy-api-server:
+    if: github.event.inputs.service == 'api-server' || github.event.inputs.service == 'all'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get current task definition
+        id: task-def
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition truegul-${{ env.ENVIRONMENT }}-api-server \
+            --query taskDefinition > task-definition.json
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update task definition with new image
+        id: update-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: api-server
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_API }}:${{ github.event.inputs.image_tag }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
+          service: api-server
+          cluster: truegul-${{ env.ENVIRONMENT }}
+          wait-for-service-stability: true
+
+      - name: Deployment summary
+        run: |
+          echo "## API Server Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag:** ${{ github.event.inputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** Success" >> $GITHUB_STEP_SUMMARY
+
+  deploy-ml-server:
+    if: github.event.inputs.service == 'ml-server' || github.event.inputs.service == 'all'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get current task definition
+        id: task-def
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition truegul-${{ env.ENVIRONMENT }}-ml-server \
+            --query taskDefinition > task-definition.json
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update task definition with new image
+        id: update-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ml-server
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_ML }}:${{ github.event.inputs.image_tag }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
+          service: ml-server
+          cluster: truegul-${{ env.ENVIRONMENT }}
+          wait-for-service-stability: true
+
+      - name: Deployment summary
+        run: |
+          echo "## ML Server Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag:** ${{ github.event.inputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** Success" >> $GITHUB_STEP_SUMMARY
