@@ -61,24 +61,68 @@ TrueGul/
 
 ### Prerequisites
 
-- Node.js 20+
-- Go 1.21+
+- Node.js 22+
+- pnpm 10+
+- Go 1.25+
 - Python 3.11+
 - Docker & Docker Compose
-- PostgreSQL 15+
 
-### Local Development
+### Local Development (without ML Server)
+
+**1. Start backend services (PostgreSQL, Redis, API Server)**
 
 ```bash
 # Clone the repository
 git clone https://github.com/your-username/TrueGul.git
 cd TrueGul
 
-# Start services with Docker Compose
-docker-compose up -d
+# Start services with Docker Compose (without ML server)
+docker compose -f docker-compose.dev.yml up -d --build
 
-# Run database migrations
-# (Instructions will be added after Sprint 0)
+# Check services are running
+docker compose -f docker-compose.dev.yml ps
+```
+
+**2. Start frontend (in a separate terminal)**
+
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+**3. Access the application**
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| API Server | http://localhost:8080 |
+| PostgreSQL | localhost:5432 |
+| Redis | localhost:6379 |
+
+**4. Stop services**
+
+```bash
+# Stop all services
+docker compose -f docker-compose.dev.yml down
+
+# Stop and remove volumes (reset database)
+docker compose -f docker-compose.dev.yml down -v
+```
+
+### Default Development Credentials
+
+| Service | Credential |
+|---------|------------|
+| PostgreSQL User | `truegul` |
+| PostgreSQL Password | `truegul123` |
+| PostgreSQL Database | `truegul` |
+
+### Full Stack (with ML Server)
+
+```bash
+# Requires .env file with OPENAI_API_KEY
+docker compose up -d --build
 ```
 
 ## Roadmap
