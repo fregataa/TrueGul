@@ -29,17 +29,10 @@ TrueGul allows users to write content independently, detects whether the text wa
 TrueGul/
 ├── README.md           # This file
 ├── SPEC.md             # Project specification (Korean)
-├── sprints/            # Sprint planning documents
-│   ├── README.md
-│   ├── sprint-0.md
-│   ├── sprint-1.md
-│   ├── sprint-2.md
-│   ├── sprint-3.md
-│   ├── sprint-4.md
-│   └── sprint-5.md
-├── frontend/           # Next.js frontend (TBD)
-├── api-server/         # Go API server (TBD)
-└── ml-server/          # Python ML server (TBD)
+├── frontend/           # Next.js frontend
+├── api-server/         # Go API server
+├── ml-server/          # Python ML server
+└── infra/              # Terraform infrastructure
 ```
 
 ## Getting Started
@@ -121,7 +114,6 @@ docker compose up -d --build
 ## Documentation
 
 - [Project Specification](./SPEC.md) (Korean)
-- [Sprint Plans](./sprints/README.md)
 
 ## License
 
