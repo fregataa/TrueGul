@@ -89,3 +89,4 @@ secrets/
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+infra/SETUP.md
