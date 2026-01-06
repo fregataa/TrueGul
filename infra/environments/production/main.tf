@@ -128,6 +128,8 @@ module "ecs" {
   ml_server_memory        = var.ml_server_memory
   ml_server_desired_count = var.ml_server_desired_count
 
+  cors_origins = var.cors_origins
+
   depends_on = [module.rds, module.elasticache]
 }
 

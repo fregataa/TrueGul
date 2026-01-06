@@ -50,6 +50,7 @@ services:
       - ML_CALLBACK_SECRET=${ML_CALLBACK_SECRET:-dev-callback-secret}
       - CALLBACK_BASE_URL=http://api-server:8080
       - ENVIRONMENT=development
+      - CORS_ORIGINS=http://localhost:3000
     ports:
       - "8080:8080"
     depends_on:

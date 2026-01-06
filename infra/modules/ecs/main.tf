@@ -215,7 +215,8 @@ resource "aws_ecs_task_definition" "api_server" {
         { name = "DATABASE_URL", value = var.database_url },
         { name = "REDIS_URL", value = var.redis_url },
         { name = "ML_SERVER_URL", value = "http://localhost:8000" },
-        { name = "CALLBACK_BASE_URL", value = "http://localhost:8080" }
+        { name = "CALLBACK_BASE_URL", value = "http://localhost:8080" },
+        { name = "CORS_ORIGINS", value = var.cors_origins }
       ]
 
       secrets = [

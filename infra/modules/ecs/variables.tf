@@ -125,3 +125,9 @@ variable "ml_server_desired_count" {
   type        = number
   default     = 1
 }
+
+variable "cors_origins" {
+  description = "Allowed CORS origins (comma-separated)"
+  type        = string
+  default     = "http://localhost:3000"
+}

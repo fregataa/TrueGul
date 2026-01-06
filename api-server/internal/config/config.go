@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type Config struct {
 	StreamName       string
 	CallbackBaseURL  string
 	CallbackPath     string
+	CORSOrigins      []string
 }
 
 func Load() *Config {
@@ -37,6 +39,12 @@ func Load() *Config {
 	port := getEnv("PORT", "8080")
 	callbackBaseURL := getEnv("CALLBACK_BASE_URL", "http://localhost:"+port)
 
+	corsOriginsStr := getEnv("CORS_ORIGINS", "http://localhost:3000")
+	corsOrigins := strings.Split(corsOriginsStr, ",")
+	for i := range corsOrigins {
+		corsOrigins[i] = strings.TrimSpace(corsOrigins[i])
+	}
+
 	return &Config{
 		Port:             port,
 		DatabaseURL:      databaseURL,
@@ -49,6 +57,7 @@ func Load() *Config {
 		StreamName:       getEnv("STREAM_NAME", "analysis_tasks"),
 		CallbackBaseURL:  callbackBaseURL,
 		CallbackPath:     "/api/v1/internal/callback",
+		CORSOrigins:      corsOrigins,
 	}
 }
 
