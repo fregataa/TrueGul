@@ -19,9 +19,9 @@ variable "security_group_ids" {
 }
 
 variable "engine_version" {
-  description = "Redis engine version"
+  description = "Valkey engine version"
   type        = string
-  default     = "7.0"
+  default     = "8.0"
 }
 
 variable "node_type" {
