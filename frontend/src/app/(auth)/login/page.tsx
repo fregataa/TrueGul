@@ -8,11 +8,12 @@ import { useAuthStore } from "@/stores/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading, isAuthenticated, error, clearError } = useAuthStore();
+  const { login, isLoading, isAuthenticated, error, clearError, checkAuth } = useAuthStore();
 
   useEffect(() => {
     clearError();
-  }, [clearError]);
+    checkAuth();
+  }, [clearError, checkAuth]);
 
   useEffect(() => {
     if (isAuthenticated) {
