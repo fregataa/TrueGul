@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     app.state.detector.load_model()
 
     app.state.feedback = FeedbackService()
-    app.state.feedback.init_client()
+    app.state.feedback.load_model()
 
     callback_client = CallbackClient()
 
@@ -67,12 +67,20 @@ async def health_check(request: Request):
     overall_status = "healthy"
 
     detector = getattr(request.app.state, "detector", None)
+    feedback = getattr(request.app.state, "feedback", None)
 
-    # Check model status
+    # Check detector model status
     if detector is not None and detector.is_loaded():
-        services["model"] = "healthy"
+        services["detector_model"] = "healthy"
     else:
-        services["model"] = "not loaded"
+        services["detector_model"] = "not loaded"
+        overall_status = "unhealthy"
+
+    # Check feedback model status
+    if feedback is not None and feedback.is_loaded():
+        services["feedback_model"] = "healthy"
+    else:
+        services["feedback_model"] = "not loaded"
         overall_status = "unhealthy"
 
     return {
