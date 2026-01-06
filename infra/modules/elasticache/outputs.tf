@@ -1,14 +1,14 @@
 output "endpoint" {
-  description = "Redis endpoint"
-  value       = aws_elasticache_cluster.main.cache_nodes[0].address
+  description = "Valkey primary endpoint"
+  value       = aws_elasticache_replication_group.main.primary_endpoint_address
 }
 
 output "port" {
-  description = "Redis port"
-  value       = aws_elasticache_cluster.main.port
+  description = "Valkey port"
+  value       = aws_elasticache_replication_group.main.port
 }
 
 output "redis_url" {
-  description = "Redis connection URL"
-  value       = "redis://${aws_elasticache_cluster.main.cache_nodes[0].address}:${aws_elasticache_cluster.main.port}"
+  description = "Valkey connection URL (redis:// protocol)"
+  value       = "redis://${aws_elasticache_replication_group.main.primary_endpoint_address}:${aws_elasticache_replication_group.main.port}"
 }

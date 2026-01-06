@@ -14,20 +14,25 @@ resource "aws_elasticache_subnet_group" "main" {
 }
 
 ################################################################################
-# ElastiCache Valkey Cluster
+# ElastiCache Valkey Replication Group
 ################################################################################
 
-resource "aws_elasticache_cluster" "main" {
-  cluster_id           = "${var.project}-${var.environment}-valkey"
+resource "aws_elasticache_replication_group" "main" {
+  replication_group_id = "${var.project}-${var.environment}-valkey"
+  description          = "${var.project} ${var.environment} Valkey cluster"
+
   engine               = "valkey"
   engine_version       = var.engine_version
   node_type            = var.node_type
-  num_cache_nodes      = 1
+  num_cache_clusters   = 1
   parameter_group_name = "default.valkey8"
   port                 = 6379
 
   subnet_group_name  = aws_elasticache_subnet_group.main.name
   security_group_ids = var.security_group_ids
+
+  automatic_failover_enabled = false
+  multi_az_enabled           = false
 
   snapshot_retention_limit = var.environment == "production" ? 7 : 0
   snapshot_window          = "02:00-03:00"
