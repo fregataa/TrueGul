@@ -60,6 +60,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Set SameSite=None for cross-origin cookie support
+	if h.isProduction {
+		c.SetSameSite(http.SameSiteNoneMode)
+	} else {
+		c.SetSameSite(http.SameSiteLaxMode)
+	}
+
 	c.SetCookie(
 		"token",
 		token,
@@ -90,6 +97,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
+	// Set SameSite=None for cross-origin cookie support
+	if h.isProduction {
+		c.SetSameSite(http.SameSiteNoneMode)
+	} else {
+		c.SetSameSite(http.SameSiteLaxMode)
+	}
+
 	c.SetCookie("token", "", -1, "/", "", h.isProduction, true)
 	c.SetCookie("csrf_token", "", -1, "/", "", h.isProduction, false)
 
