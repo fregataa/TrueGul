@@ -47,3 +47,13 @@ output "ml_log_group_name" {
   description = "ML Server CloudWatch log group name"
   value       = aws_cloudwatch_log_group.ml_server.name
 }
+
+output "migrate_task_definition_arn" {
+  description = "Database migration task definition ARN"
+  value       = aws_ecs_task_definition.migrate.arn
+}
+
+output "migrate_log_group_name" {
+  description = "Migration CloudWatch log group name"
+  value       = aws_cloudwatch_log_group.migrate.name
+}

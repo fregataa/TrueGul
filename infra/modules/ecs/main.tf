@@ -325,6 +325,59 @@ resource "aws_ecs_task_definition" "ml_server" {
 }
 
 ################################################################################
+# Database Migration Task Definition
+################################################################################
+
+resource "aws_cloudwatch_log_group" "migrate" {
+  name              = "/ecs/${var.project}-${var.environment}/migrate"
+  retention_in_days = var.log_retention_days
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project
+  }
+}
+
+resource "aws_ecs_task_definition" "migrate" {
+  family                   = "${var.project}-${var.environment}-migrate"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
+
+  container_definitions = jsonencode([
+    {
+      name  = "migrate"
+      image = "${var.api_server_image}:${var.api_server_image_tag}"
+
+      command = ["./migrate", "up"]
+
+      environment = [
+        { name = "DATABASE_URL", value = var.database_url }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.migrate.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "migrate"
+        }
+      }
+
+      essential = true
+    }
+  ])
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project
+  }
+}
+
+################################################################################
 # ECS Services
 ################################################################################
 

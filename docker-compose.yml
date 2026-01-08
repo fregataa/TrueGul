@@ -33,6 +33,21 @@ services:
     networks:
       - truegul-network
 
+  migrate:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+    container_name: truegul-migrate
+    command: ["./migrate", "up"]
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-truegul}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-truegul}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - truegul-network
+    restart: "no"
+
   api-server:
     build:
       context: ./api-server
@@ -53,6 +68,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     networks:
       - truegul-network
 

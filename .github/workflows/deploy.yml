@@ -15,16 +15,109 @@ on:
         description: 'Image tag to deploy (default: latest)'
         required: false
         default: 'latest'
+      run_migrations:
+        description: 'Run database migrations before deployment'
+        required: false
+        type: boolean
+        default: true
 
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY_API: truegul-api-server
   ECR_REPOSITORY_ML: truegul-ml-server
   ENVIRONMENT: production
+  ECS_CLUSTER: truegul-production
 
 jobs:
+  migrate-database:
+    if: github.event.inputs.run_migrations == 'true' && (github.event.inputs.service == 'api-server' || github.event.inputs.service == 'all')
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get and update migration task definition
+        id: migrate-task-def
+        run: |
+          # Get current task definition
+          aws ecs describe-task-definition \
+            --task-definition truegul-${{ env.ENVIRONMENT }}-migrate \
+            --query taskDefinition > migrate-task-def.json
+
+          # Update image in task definition
+          NEW_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_API }}:${{ github.event.inputs.image_tag }}"
+          jq --arg IMAGE "$NEW_IMAGE" '.containerDefinitions[0].image = $IMAGE' migrate-task-def.json > updated-migrate-task-def.json
+
+          # Register new task definition
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://updated-migrate-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "task_def_arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+
+      - name: Run migration task
+        id: run-migration
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --task-definition ${{ steps.migrate-task-def.outputs.task_def_arn }} \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.PRIVATE_SUBNET_IDS }}],securityGroups=[${{ secrets.ECS_SECURITY_GROUP_ID }}],assignPublicIp=DISABLED}" \
+            --query 'tasks[0].taskArn' \
+            --output text)
+
+          echo "task_arn=$TASK_ARN" >> $GITHUB_OUTPUT
+          echo "Started migration task: $TASK_ARN"
+
+      - name: Wait for migration to complete
+        run: |
+          echo "Waiting for migration task to complete..."
+          aws ecs wait tasks-stopped \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks ${{ steps.run-migration.outputs.task_arn }}
+
+      - name: Check migration result
+        run: |
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks ${{ steps.run-migration.outputs.task_arn }} \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)
+
+          echo "Migration exit code: $EXIT_CODE"
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error::Migration failed with exit code: $EXIT_CODE"
+            echo "## Migration Failed" >> $GITHUB_STEP_SUMMARY
+            echo "- **Exit Code:** $EXIT_CODE" >> $GITHUB_STEP_SUMMARY
+            echo "- **Task ARN:** ${{ steps.run-migration.outputs.task_arn }}" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "## Migration Successful" >> $GITHUB_STEP_SUMMARY
+          echo "- **Task ARN:** ${{ steps.run-migration.outputs.task_arn }}" >> $GITHUB_STEP_SUMMARY
+
   deploy-api-server:
-    if: github.event.inputs.service == 'api-server' || github.event.inputs.service == 'all'
+    needs: [migrate-database]
+    # Run if: (api-server or all selected) AND (migrations succeeded or were skipped)
+    if: |
+      always() &&
+      (github.event.inputs.service == 'api-server' || github.event.inputs.service == 'all') &&
+      (needs.migrate-database.result == 'success' || needs.migrate-database.result == 'skipped')
     runs-on: ubuntu-latest
     environment: production
     permissions:

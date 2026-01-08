@@ -1,7 +1,10 @@
-.PHONY: build run test lint migrate-up migrate-down
+.PHONY: build build-migrate run test lint migrate-up migrate-down migrate-version
 
 build:
 	go build -o bin/server ./cmd/server
+
+build-migrate:
+	go build -o bin/migrate ./cmd/migrate
 
 run:
 	go run ./cmd/server
@@ -13,7 +16,10 @@ lint:
 	golangci-lint run
 
 migrate-up:
-	migrate -path ./migrations -database "$(DATABASE_URL)" up
+	./bin/migrate up
 
 migrate-down:
-	migrate -path ./migrations -database "$(DATABASE_URL)" down
+	./bin/migrate down
+
+migrate-version:
+	./bin/migrate version
