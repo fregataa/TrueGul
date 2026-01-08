@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings
 
 from app.common.types import ModelLoaderType
 
+
 @dataclass(frozen=True)
 class ModelLoaderConfig:
     """Configuration for model loader."""

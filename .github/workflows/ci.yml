@@ -73,17 +73,21 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
           cache: "pip"
-          cache-dependency-path: ml-server/requirements.txt
+          cache-dependency-path: ml-server/pyproject.toml
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install ruff pytest pytest-asyncio
+      - name: Install dev dependencies
+        run: pip install ruff pyright pytest pytest-asyncio
 
       - name: Run Ruff linter
-        run: ruff check .
+        run: ruff check app/
+
+      - name: Run Ruff formatter check
+        run: ruff format --check app/
+
+      - name: Run Pyright type checker
+        run: pyright app/
 
       - name: Run tests
         run: pytest -v

@@ -24,9 +24,10 @@ class RedisConsumer(Consumer):
         self._running = False
 
     async def connect(self) -> None:
-        self._redis = redis.from_url(self._redis_url, decode_responses=True)
+        client = redis.from_url(self._redis_url, decode_responses=True)
+        self._redis = client
         try:
-            await self._redis.xgroup_create(
+            await client.xgroup_create(
                 self._stream_name, self._consumer_group, id="0", mkstream=True
             )
             logger.info(f"Created consumer group: {self._consumer_group}")
@@ -41,12 +42,16 @@ class RedisConsumer(Consumer):
             await self._redis.aclose()
 
     async def start(self, handler: MessageHandler) -> None:
+        if self._redis is None:
+            raise RuntimeError("Redis client not connected. Call connect() first.")
+
         self._running = True
         logger.info("Starting Redis consumer...")
+        client = self._redis
 
         while self._running:
             try:
-                messages = await self._redis.xreadgroup(
+                messages = await client.xreadgroup(
                     self._consumer_group,
                     self._consumer_name,
                     {self._stream_name: ">"},
@@ -57,7 +62,7 @@ class RedisConsumer(Consumer):
                 if not messages:
                     continue
 
-                for stream, stream_messages in messages:
+                for _stream, stream_messages in messages:
                     for message_id, data in stream_messages:
                         message = Message(id=message_id, data=data)
                         await handler(message)

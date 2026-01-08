@@ -4,15 +4,15 @@ import time
 from app.config import settings
 from app.mq import Consumer, Message, RedisConsumer
 from app.schemas.task import (
-    AnalysisTask,
     AnalysisCallback,
-    AnalysisResult,
     AnalysisError,
+    AnalysisResult,
+    AnalysisTask,
     ErrorCode,
 )
+from app.services.callback import CallbackClient
 from app.services.detector import AIDetectorService
 from app.services.feedback import FeedbackService
-from app.services.callback import CallbackClient
 
 logger = logging.getLogger(__name__)
 
@@ -49,21 +49,28 @@ class TaskProcessor:
             await self._consumer.ack(message.id)
             return
 
-        task: AnalysisTask | None = None
+        task_id: str = "unknown"
+        callback_url: str | None = None
+        callback: AnalysisCallback
+
         try:
             task = AnalysisTask.model_validate_json(task_data)
-            logger.info(f"Processing task: {task.task_id}")
+            task_id = task.task_id
+            callback_url = task.callback_url
+            content = task.content
+            writing_type = task.writing_type
+            logger.info(f"Processing task: {task_id}")
 
             start_time = time.time()
 
-            ai_score = self._detector.detect(task.content)
+            ai_score = self._detector.detect(content)
 
-            feedback = self._feedback.generate_feedback(task.content, task.writing_type, ai_score)
+            feedback = self._feedback.generate_feedback(content, writing_type, ai_score)
 
             latency_ms = int((time.time() - start_time) * 1000)
 
             callback = AnalysisCallback(
-                task_id=task.task_id,
+                task_id=task_id,
                 status="completed",
                 result=AnalysisResult(
                     ai_probability=ai_score,
@@ -85,7 +92,7 @@ class TaskProcessor:
                 retryable = True
 
             callback = AnalysisCallback(
-                task_id=task.task_id if task else "unknown",
+                task_id=task_id,
                 status="failed",
                 error=AnalysisError(
                     code=error_code,
@@ -94,8 +101,8 @@ class TaskProcessor:
                 ),
             )
 
-        if task:
-            await self._callback.send_callback(task.callback_url, callback)
+        if callback_url:
+            await self._callback.send_callback(callback_url, callback)
         await self._consumer.ack(message.id)
 
 

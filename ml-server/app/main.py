@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 from contextlib import asynccontextmanager
 
@@ -32,9 +33,7 @@ async def lifespan(app: FastAPI):
 
     callback_client = CallbackClient()
 
-    task_processor = create_task_processor(
-        app.state.detector, app.state.feedback, callback_client
-    )
+    task_processor = create_task_processor(app.state.detector, app.state.feedback, callback_client)
     await task_processor.connect()
 
     consumer_task = asyncio.create_task(task_processor.start())
@@ -43,10 +42,8 @@ async def lifespan(app: FastAPI):
 
     await task_processor.stop()
     consumer_task.cancel()
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         await consumer_task
-    except asyncio.CancelledError:
-        pass
     await task_processor.disconnect()
     await callback_client.close()
 

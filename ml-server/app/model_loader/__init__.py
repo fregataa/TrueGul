@@ -4,9 +4,9 @@ from app.model_loader.local import LocalModelLoader
 from app.model_loader.s3 import S3ModelLoader
 
 __all__ = [
+    "LocalModelLoader",
     "ModelLoader",
     "ModelLoaders",
     "S3ModelLoader",
-    "LocalModelLoader",
     "create_model_loaders",
 ]

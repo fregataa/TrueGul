@@ -1,5 +1,4 @@
 from enum import StrEnum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -42,5 +41,5 @@ class AnalysisCallback(BaseModel):
     version: str = "1"
     task_id: str
     status: str
-    result: Optional[AnalysisResult] = None
-    error: Optional[AnalysisError] = None
+    result: AnalysisResult | None = None
+    error: AnalysisError | None = None

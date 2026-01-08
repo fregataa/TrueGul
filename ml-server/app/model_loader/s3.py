@@ -36,7 +36,6 @@ class S3ModelLoader(ModelLoader):
     def _s3(self):
         """Lazy initialization of S3 client."""
         if self._s3_client is None and self._bucket:
-
             self._s3_client = boto3.client("s3")
         return self._s3_client
 
@@ -76,6 +75,8 @@ class S3ModelLoader(ModelLoader):
 
     def _download_file(self, s3_key: str, local_path: Path) -> None:
         """Download a single file from S3."""
+        if self._s3 is None:
+            raise RuntimeError("S3 client not initialized")
         logger.info(f"Downloading s3://{self._bucket}/{s3_key} to {local_path}")
         local_path.parent.mkdir(parents=True, exist_ok=True)
         self._s3.download_file(self._bucket, s3_key, str(local_path))
@@ -83,10 +84,13 @@ class S3ModelLoader(ModelLoader):
 
     def _download_directory(self, s3_prefix: str, local_path: Path) -> None:
         """Download all files under an S3 prefix (directory)."""
+        if self._s3 is None:
+            raise RuntimeError("S3 client not initialized")
         logger.info(f"Downloading s3://{self._bucket}/{s3_prefix}/ to {local_path}")
         local_path.mkdir(parents=True, exist_ok=True)
 
-        paginator = self._s3.get_paginator("list_objects_v2")
+        s3_client = self._s3
+        paginator = s3_client.get_paginator("list_objects_v2")
         for page in paginator.paginate(Bucket=self._bucket, Prefix=s3_prefix):
             for obj in page.get("Contents", []):
                 s3_key = obj["Key"]
@@ -101,6 +105,6 @@ class S3ModelLoader(ModelLoader):
                 file_local_path.parent.mkdir(parents=True, exist_ok=True)
 
                 logger.debug(f"Downloading {s3_key} -> {file_local_path}")
-                self._s3.download_file(self._bucket, s3_key, str(file_local_path))
+                s3_client.download_file(self._bucket, s3_key, str(file_local_path))
 
         logger.info(f"Downloaded {s3_prefix}/ successfully")
