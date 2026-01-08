@@ -1,6 +1,6 @@
 output "ml_models_bucket_name" {
   description = "ML models S3 bucket name"
-  value       = aws_s3_bucket.ml_models.id
+  value       = "${var.project}-ml-models"
 }
 
 output "ml_models_bucket_arn" {
