@@ -129,3 +129,105 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY_ML:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  # =============================================================================
+  # Deploy Jobs (Auto-deploy after successful build)
+  # =============================================================================
+
+  deploy-api-server:
+    needs: [build-api-server]
+    if: needs.build-api-server.result == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition truegul-production-api-server \
+            --query taskDefinition > task-definition.json
+
+      - name: Update task definition with new image
+        id: update-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: api-server
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_API }}:${{ github.sha }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
+          service: api-server
+          cluster: truegul-production
+          wait-for-service-stability: true
+
+      - name: Deployment summary
+        run: |
+          echo "## API Server Auto-Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** Success" >> $GITHUB_STEP_SUMMARY
+
+  deploy-ml-server:
+    needs: [build-ml-server]
+    if: needs.build-ml-server.result == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition truegul-production-ml-server \
+            --query taskDefinition > task-definition.json
+
+      - name: Update task definition with new image
+        id: update-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ml-server
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_ML }}:${{ github.sha }}
+
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
+          service: ml-server
+          cluster: truegul-production
+          wait-for-service-stability: true
+
+      - name: Deployment summary
+        run: |
+          echo "## ML Server Auto-Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** Success" >> $GITHUB_STEP_SUMMARY
