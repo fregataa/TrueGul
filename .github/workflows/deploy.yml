@@ -57,9 +57,12 @@ jobs:
             --task-definition truegul-${{ env.ENVIRONMENT }}-migrate \
             --query taskDefinition > migrate-task-def.json
 
-          # Update image in task definition
+          # Remove fields not allowed in register-task-definition and update image
           NEW_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_API }}:${{ github.event.inputs.image_tag }}"
-          jq --arg IMAGE "$NEW_IMAGE" '.containerDefinitions[0].image = $IMAGE' migrate-task-def.json > updated-migrate-task-def.json
+          jq --arg IMAGE "$NEW_IMAGE" '
+            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) |
+            .containerDefinitions[0].image = $IMAGE
+          ' migrate-task-def.json > updated-migrate-task-def.json
 
           # Register new task definition
           TASK_DEF_ARN=$(aws ecs register-task-definition \
