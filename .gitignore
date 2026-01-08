@@ -1,5 +1,6 @@
 # Agent
 .serena/
+.mcp.json
 
 # Dependencies
 node_modules/
