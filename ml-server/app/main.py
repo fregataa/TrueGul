@@ -5,8 +5,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.services.detector import AIDetectorService
-from app.services.feedback import FeedbackService
+from app.config import settings
+from app.model_adapter import ModelAdapter
+from app.model_loader.creator import create_model_loaders
 from app.services.callback import CallbackClient
 from app.services.consumer import create_task_processor
 
@@ -19,11 +20,15 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.detector = AIDetectorService()
-    app.state.detector.load_model()
+    # Initialize model loaders
+    loaders = create_model_loaders(settings.get_model_loader_config())
 
-    app.state.feedback = FeedbackService()
-    app.state.feedback.load_model()
+    # Initialize model adapter
+    adapter = ModelAdapter(loaders)
+
+    # Create services with loaded models
+    app.state.detector = adapter.create_detector_service(settings.get_detector_model_config())
+    app.state.feedback = adapter.create_feedback_service(settings.get_feedback_model_config())
 
     callback_client = CallbackClient()
 
@@ -61,6 +66,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 async def health_check(request: Request):
     services = {}
@@ -69,24 +75,19 @@ async def health_check(request: Request):
     detector = getattr(request.app.state, "detector", None)
     feedback = getattr(request.app.state, "feedback", None)
 
-    # Check detector model status
-    if detector is not None and detector.is_loaded():
+    if detector is not None:
         services["detector_model"] = "healthy"
     else:
         services["detector_model"] = "not loaded"
         overall_status = "unhealthy"
 
-    # Check feedback model status
-    if feedback is not None and feedback.is_loaded():
+    if feedback is not None:
         services["feedback_model"] = "healthy"
     else:
         services["feedback_model"] = "not loaded"
         overall_status = "unhealthy"
 
-    return {
-        "status": overall_status,
-        "services": services
-    }
+    return {"status": overall_status, "services": services}
 
 
 @app.get("/health/live")

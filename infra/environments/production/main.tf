@@ -36,6 +36,17 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 ################################################################################
+# S3 (ML Models)
+################################################################################
+
+module "s3" {
+  source = "../../modules/s3"
+
+  project     = var.project
+  environment = var.environment
+}
+
+################################################################################
 # ECR
 ################################################################################
 
@@ -130,7 +141,9 @@ module "ecs" {
 
   cors_origins = var.cors_origins
 
-  depends_on = [module.rds, module.elasticache]
+  ml_models_bucket = module.s3.ml_models_bucket_name
+
+  depends_on = [module.rds, module.elasticache, module.s3]
 }
 
 ################################################################################
@@ -160,4 +173,9 @@ output "rds_endpoint" {
 output "redis_endpoint" {
   description = "Redis endpoint"
   value       = module.elasticache.endpoint
+}
+
+output "ml_models_bucket" {
+  description = "ML models S3 bucket name"
+  value       = module.s3.ml_models_bucket_name
 }

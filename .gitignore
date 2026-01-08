@@ -77,7 +77,9 @@ temp/
 *.pth
 *.onnx
 *.bin
-models/
+*.gguf
+ml-server/models/detector/
+ml-server/models/feedback/
 
 # Secrets
 *.pem

@@ -131,3 +131,10 @@ variable "cors_origins" {
   type        = string
   default     = "http://localhost:3000"
 }
+
+# S3 ML Models
+variable "ml_models_bucket" {
+  description = "S3 bucket name for ML models (empty to disable S3 loading)"
+  type        = string
+  default     = ""
+}

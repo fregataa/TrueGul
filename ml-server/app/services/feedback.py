@@ -3,40 +3,24 @@ import textwrap
 
 from llama_cpp import Llama
 
-from app.config import settings
 from app.schemas.task import WritingType
 
 logger = logging.getLogger(__name__)
 
 
 class FeedbackService:
-    def __init__(self):
-        self._llm: Llama | None = None
-
-    def load_model(self):
-        logger.info(f"Loading feedback model: {settings.feedback_model_path}")
-        self._llm = Llama(
-            model_path=settings.feedback_model_path,
-            n_ctx=settings.feedback_n_ctx,
-            n_threads=settings.feedback_n_threads,
-            verbose=False,
-        )
-        logger.info("Feedback model loaded successfully")
-
-    def is_loaded(self) -> bool:
-        return self._llm is not None
+    def __init__(self, llm: Llama, max_tokens: int = 256):
+        self._llm = llm
+        self._max_tokens = max_tokens
 
     def generate_feedback(
         self, text: str, writing_type: WritingType, ai_score: float
     ) -> str:
-        if self._llm is None:
-            raise RuntimeError("Model not loaded")
-
         prompt = self._build_prompt(text, writing_type, ai_score)
 
         output = self._llm(
             prompt,
-            max_tokens=settings.feedback_max_tokens,
+            max_tokens=self._max_tokens,
             temperature=0.7,
             stop=["</s>", "\n\n\n"],
         )

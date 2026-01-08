@@ -126,6 +126,31 @@ resource "aws_iam_role" "ecs_task" {
   }
 }
 
+# S3 Access Policy for ML Models
+resource "aws_iam_role_policy" "ecs_task_s3_access" {
+  count = var.ml_models_bucket != "" ? 1 : 0
+
+  name = "${var.project}-${var.environment}-s3-model-access"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.ml_models_bucket}",
+          "arn:aws:s3:::${var.ml_models_bucket}/*"
+        ]
+      }
+    ]
+  })
+}
+
 ################################################################################
 # Application Load Balancer
 ################################################################################
@@ -287,7 +312,8 @@ resource "aws_ecs_task_definition" "ml_server" {
         { name = "PORT", value = "8000" },
         { name = "ENVIRONMENT", value = var.environment },
         { name = "REDIS_URL", value = var.redis_url },
-        { name = "CALLBACK_BASE_URL", value = "http://${aws_lb.main.dns_name}" }
+        { name = "CALLBACK_BASE_URL", value = "http://${aws_lb.main.dns_name}" },
+        { name = "ML_MODELS_BUCKET", value = var.ml_models_bucket }
       ]
 
       secrets = [
@@ -311,7 +337,7 @@ resource "aws_ecs_task_definition" "ml_server" {
         interval    = 30
         timeout     = 5
         retries     = 3
-        startPeriod = 120
+        startPeriod = 180
       }
 
       essential = true
