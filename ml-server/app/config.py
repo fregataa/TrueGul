@@ -49,11 +49,19 @@ class Settings(BaseSettings):
     detector_model_s3_key: str = "detector/chatgpt-detector-roberta"
     detector_model_version: str = "0.1.0"
 
-    # Feedback Model
+    # Feedback Model (local TinyLlama - legacy)
     feedback_model_s3_key: str = "feedback/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
     feedback_n_ctx: int = 2048
     feedback_n_threads: int = 4
     feedback_max_tokens: int = 256
+
+    # LLM API Configuration (for TOPIK scoring)
+    llm_provider: str = "anthropic"  # anthropic | openai
+    anthropic_api_key: str = ""
+    openai_api_key: str = ""
+    llm_model_anthropic: str = "claude-3-5-haiku-20241022"
+    llm_model_openai: str = "gpt-4o-mini"
+    llm_max_tokens: int = 1024
 
     # MQ Configuration
     stream_name: str = "analysis_tasks"

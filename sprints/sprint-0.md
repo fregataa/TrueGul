@@ -14,12 +14,12 @@
 
 | ID | Task | 담당 | 상태 | 산출물 |
 |----|------|------|------|--------|
-| S0-1 | 모바일 프레임워크 선정 | - | TODO | 기술 결정 문서 |
-| S0-2 | 모바일 프로젝트 초기화 | - | TODO | `/mobile` 디렉토리 |
-| S0-3 | LLM API 선정 및 API Key 발급 | - | TODO | 환경변수 설정 |
-| S0-4 | TOPIK 채점 프롬프트 초안 작성 | - | TODO | `prompts/topik_scoring.md` |
-| S0-5 | Few-shot 예시 데이터 준비 | - | TODO | `data/few_shot_examples.json` |
-| S0-6 | FCM/APNs 프로젝트 설정 | - | TODO | Firebase/Apple 설정 |
+| S0-1 | 모바일 프레임워크 선정 | - | DONE | Flutter 선정 |
+| S0-2 | 모바일 프로젝트 초기화 | - | DONE | `/mobile` 디렉토리 |
+| S0-3 | LLM API 선정 및 API Key 발급 | - | DONE | `.env.example`, `ml-server/app/config.py` |
+| S0-4 | TOPIK 채점 프롬프트 초안 작성 | - | DONE | `ml-server/prompts/topik_scoring.md` |
+| S0-5 | Few-shot 예시 데이터 준비 | - | DONE | `ml-server/data/few_shot_examples.json` |
+| S0-6 | FCM/APNs 프로젝트 설정 | - | DEFERRED | → Sprint 3로 이동 |
 
 ---
 
@@ -35,10 +35,10 @@
 | 생태계 | 성장 중 | 성숙 |
 | 학습 곡선 | Dart 학습 필요 | JS 경험 시 낮음 |
 
-### 결정 기준
-- [ ] 팀 기술 스택
-- [ ] 개발 속도 우선 vs 성능 우선
-- [ ] 향후 유지보수 고려
+### 결정: **Flutter**
+- [x] 높은 성능과 UI 일관성
+- [x] 모바일 최적화
+- [x] 단일 코드베이스로 iOS/Android 지원
 
 ---
 
@@ -53,10 +53,10 @@
 | GPT-4o | $0.03 | 품질 안정 | 비용 높음 |
 | Claude 3.5 Sonnet | $0.04 | 최고 품질 | 비용 가장 높음 |
 
-### 결정 기준
-- [ ] 한국어 채점 품질 테스트
-- [ ] 응답 속도 비교
-- [ ] 비용 대비 품질
+### 결정: **Claude + GPT 둘 다 테스트**
+- [x] Claude 3.5 Haiku와 GPT-4o-mini 모두 설정
+- [x] `scripts/test_llm_scoring.py`로 비교 테스트
+- [ ] 테스트 결과 기반 최종 선정 (S2에서 진행)
 
 ---
 
@@ -158,13 +158,15 @@ JSON 스키마 정의
 
 ## Completion Criteria
 
-- [ ] 모바일 프레임워크 결정 및 문서화
-- [ ] 모바일 프로젝트 초기화 완료
-- [ ] LLM API 선정 및 테스트 완료
-- [ ] 프롬프트 초안 작성 및 기본 검증
-- [ ] Few-shot 데이터 5개 준비
-- [ ] FCM/APNs 프로젝트 설정 완료
+- [x] 모바일 프레임워크 결정 및 문서화 (Flutter)
+- [x] 모바일 프로젝트 초기화 완료 (`/mobile`)
+- [x] LLM API 선정 및 테스트 환경 구성 (Claude + GPT)
+- [x] 프롬프트 초안 작성 (`ml-server/prompts/topik_scoring.md`)
+- [x] Few-shot 데이터 5개 준비 (`ml-server/data/few_shot_examples.json`)
+- [ ] ~~FCM/APNs 프로젝트 설정~~ → Sprint 3로 이동
 
 ---
 
-*Sprint 0 완료 후 S1, S2, S3 병렬 진행 가능*
+**Sprint 0 Status: DONE** (2026-01-11)
+
+*S1, S2, S3 병렬 진행 가능*
