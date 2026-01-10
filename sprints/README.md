@@ -14,12 +14,12 @@
 
 | Sprint | 목표 | 문서 |
 |--------|------|------|
-| **S0** | Planning & Setup | [sprint-0.md](./sprints/sprint-0.md) |
-| **S1** | Backend - API Server | [sprint-1.md](./sprints/sprint-1.md) |
-| **S2** | Backend - ML Server | [sprint-2.md](./sprints/sprint-2.md) |
-| **S3** | Mobile App | [sprint-3.md](./sprints/sprint-3.md) |
-| **S4** | Integration & QA | [sprint-4.md](./sprints/sprint-4.md) |
-| **S5** | Deployment | [sprint-5.md](./sprints/sprint-5.md) |
+| **S0** | Planning & Setup | [sprint-0.md](./sprint-0.md) |
+| **S1** | Backend - API Server | [sprint-1.md](./sprint-1.md) |
+| **S2** | Backend - ML Server | [sprint-2.md](./sprint-2.md) |
+| **S3** | Mobile App | [sprint-3.md](./sprint-3.md) |
+| **S4** | Integration & QA | [sprint-4.md](./sprint-4.md) |
+| **S5** | Deployment | [sprint-5.md](./sprint-5.md) |
 
 ---
 
@@ -50,10 +50,10 @@ S0 (Planning)
 
 | Version | 목표 | 문서 |
 |---------|------|------|
-| **v1** | OCR 도입 | [v1-ocr.md](./versions/v1-ocr.md) |
-| **v2** | 데이터 축적 | [v2-data-collection.md](./versions/v2-data-collection.md) |
-| **v3** | 모델 최적화 | [v3-model-optimization.md](./versions/v3-model-optimization.md) |
-| **v4+** | 확장 | [v4-expansion.md](./versions/v4-expansion.md) |
+| **v1** | OCR 도입 | [v1-ocr.md](../versions/v1-ocr.md) |
+| **v2** | 데이터 축적 | [v2-data-collection.md](../versions/v2-data-collection.md) |
+| **v3** | 모델 최적화 | [v3-model-optimization.md](../versions/v3-model-optimization.md) |
+| **v4+** | 확장 | [v4-expansion.md](../versions/v4-expansion.md) |
 
 ---
 
